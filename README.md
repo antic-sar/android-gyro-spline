@@ -1,9 +1,14 @@
 # Gyro Spline Android
 
 Android (Jetpack Compose) implementation of a gyroscope/tilt-driven Spline scene, inspired by:
-
 - iOS reference: [kapor00/gyro-spline](https://github.com/kapor00/gyro-spline)
 - Vanilla JS version: [antic-sar/vanillajs-gyro-spline](https://github.com/antic-sar/vanillajs-gyro-spline)
+
+## Overview
+
+Add your GitHub uploaded video URL here:
+
+`https://github.com/user-attachments/assets/your-video-id`
 
 ## What It Does
 
