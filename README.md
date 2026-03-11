@@ -7,22 +7,31 @@ Android (Jetpack Compose) implementation of a gyroscope/tilt-driven Spline scene
 
 ## What It Does
 
-- Loads a Spline scene from URL using `design.spline:spline-runtime`
+- Loads a Spline scene with local-first strategy (bundled `res/raw`) and URL fallback
 - Uses device motion (`TYPE_GRAVITY` fallback to accelerometer)
 - Auto-calibrates neutral hand angle
 - Applies low-pass filtering + dead zone + smoothing for natural motion
 - Rotates Spline object `Subject` in real time
 - Uses black background behind the scene
+- Shows animated loading overlay while scene runtime initializes
 
 ## Scene
 
 - Editable source file: `https://app.spline.design/file/f5c6076a-3af1-48cf-9b4b-238e10c5b56b`
 - Runtime export URL: `https://build.spline.design/SCHshn90bJB7fyKG6c41/scene.splinecontent`
+- Bundled local runtime file: `app/src/main/res/raw/scene.splinecontent`
 - Target object: `Subject`
 
 If the object name is different in your scene, update `TARGET_OBJECT_NAME` in:
 
 - `app/src/main/java/com/example/gyro_spline_android/MainActivity.kt`
+
+## Loading Strategy
+
+- By default, app tries loading local resource `R.raw.scene` first (`scene.splinecontent` in `res/raw`).
+- If local resource is missing, it falls back to cloud URL (`build.spline.design`).
+- To update scene quickly without network dependency, replace:
+  - `app/src/main/res/raw/scene.splinecontent`
 
 ## Requirements
 
@@ -52,6 +61,13 @@ Adjust these constants in `MainActivity.kt`:
 - `ROTATION_SMOOTHING_FACTOR`: smoothness vs responsiveness
 - `SENSOR_LPF_ALPHA`: sensor noise filtering
 - `DEAD_ZONE`: ignores tiny hand shake
+
+## Resume Behavior
+
+- Default mode keeps the same `SplineView` instance on foreground return for faster reopen:
+  - `RECREATE_SPLINE_VIEW_ON_FOREGROUND = false`
+- If a device shows resume artifacts, you can switch to safer (slower) full reload on foreground:
+  - `RECREATE_SPLINE_VIEW_ON_FOREGROUND = true`
 
 ## Credits
 
