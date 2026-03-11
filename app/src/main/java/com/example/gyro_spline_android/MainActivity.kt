@@ -22,6 +22,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.example.gyro_spline_android.ui.theme.GyroSplineAndroidTheme
 import design.spline.runtime.SplineView
 import design.spline.runtime.Vector3
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -55,11 +58,13 @@ class MainActivity : ComponentActivity() {
 
 private class RotationUpdater {
     var updateRotation: ((Float, Float) -> Unit)? = null
+    var splineView: SplineView? = null
 }
 
 @Composable
 private fun GyroSplineScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val lifecycleOwner = remember(context) { context as? LifecycleOwner }
     val sensorManager = remember(context) {
         context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
     }
@@ -69,7 +74,7 @@ private fun GyroSplineScreen(modifier: Modifier = Modifier) {
     }
     val rotationUpdater = remember { RotationUpdater() }
 
-    DisposableEffect(sensorManager, motionSensor, rotationUpdater) {
+    DisposableEffect(sensorManager, motionSensor, rotationUpdater, lifecycleOwner) {
         var smoothedRotationX = 0f
         var smoothedRotationY = 0f
         var hasFiltered = false
@@ -79,6 +84,7 @@ private fun GyroSplineScreen(modifier: Modifier = Modifier) {
         var hasBaseline = false
         var baselineX = 0f
         var baselineY = 0f
+        var isListening = false
 
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
@@ -145,15 +151,56 @@ private fun GyroSplineScreen(modifier: Modifier = Modifier) {
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
         }
 
-        if (motionSensor != null) {
+        fun startMotionUpdates() {
+            if (isListening) return
+            if (motionSensor == null) {
+                Log.w(LOG_TAG, "No gravity/accelerometer sensor available on this device.")
+                return
+            }
+
+            // Recalibrate after app resume to avoid stale background sensor state.
+            hasFiltered = false
+            hasBaseline = false
             sensorManager.registerListener(listener, motionSensor, SENSOR_INTERVAL_US)
+            isListening = true
+        }
+
+        fun stopMotionUpdates() {
+            if (!isListening) return
+            sensorManager.unregisterListener(listener)
+            isListening = false
+        }
+
+        val lifecycle = lifecycleOwner?.lifecycle
+        val lifecycleObserver = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> {
+                    startMotionUpdates()
+                    rotationUpdater.splineView?.play()
+                }
+                Lifecycle.Event.ON_PAUSE -> {
+                    stopMotionUpdates()
+                    rotationUpdater.splineView?.stop()
+                }
+                else -> Unit
+            }
+        }
+
+        if (lifecycle != null) {
+            lifecycle.addObserver(lifecycleObserver)
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                startMotionUpdates()
+            }
         } else {
-            Log.w(LOG_TAG, "No gravity/accelerometer sensor available on this device.")
+            Log.w(LOG_TAG, "No lifecycle owner found. Running motion updates without pause/resume hooks.")
+            startMotionUpdates()
         }
 
         onDispose {
-            sensorManager.unregisterListener(listener)
+            lifecycle?.removeObserver(lifecycleObserver)
+            stopMotionUpdates()
             rotationUpdater.updateRotation = null
+            rotationUpdater.splineView = null
         }
     }
 
@@ -163,6 +210,7 @@ private fun GyroSplineScreen(modifier: Modifier = Modifier) {
             .background(Color.Black),
         factory = { viewContext ->
             SplineView(viewContext).apply {
+                rotationUpdater.splineView = this
                 loadUrl(SPLINE_SCENE_URL) {
                     val subject = findObjectByName(TARGET_OBJECT_NAME)
                     if (subject == null) {
