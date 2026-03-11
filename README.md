@@ -6,9 +6,7 @@ Android (Jetpack Compose) implementation of a gyroscope/tilt-driven Spline scene
 
 ## Overview
 
-Add your GitHub uploaded video URL here:
-
-`https://github.com/user-attachments/assets/your-video-id`
+https://github.com/user-attachments/assets/28fb28c5-df5d-455a-bd02-64c1d35a56cc
 
 ## What It Does
 
