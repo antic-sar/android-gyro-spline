@@ -16,7 +16,8 @@ Android (Jetpack Compose) implementation of a gyroscope/tilt-driven Spline scene
 
 ## Scene
 
-- URL: `https://build.spline.design/SCHshn90bJB7fyKG6c41/scene.splinecontent`
+- Editable source file: `https://app.spline.design/file/f5c6076a-3af1-48cf-9b4b-238e10c5b56b`
+- Runtime export URL: `https://build.spline.design/SCHshn90bJB7fyKG6c41/scene.splinecontent`
 - Target object: `Subject`
 
 If the object name is different in your scene, update `TARGET_OBJECT_NAME` in:
